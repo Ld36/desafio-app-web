@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReportController;
 
 // ROTAS PÚBLICAS
 // Login
@@ -27,4 +28,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/users/{user}', [UserController::class, 'update']);
     Route::delete('/users/{user}', [UserController::class, 'destroy']);
     Route::apiResource('products', ProductController::class);
+    Route::get('/relatorio-sql', [ReportController::class, 'relatorioSql']);
 });
