@@ -7,10 +7,23 @@
           <div class="opt1-logo-text">AdminPanel</div>
           <div class="opt1-logo-sub">v1.0 — full-stack</div>
         </div>
-        <div class="opt1-nav-item" @click="$router.push('/')"><div class="opt1-nav-dot"></div>Dashboard</div>
-        <div class="opt1-nav-item" @click="$router.push('/')"><div class="opt1-nav-dot"></div>Usuários</div>
-        <div class="opt1-nav-item active"><div class="opt1-nav-dot" style="background:#4f6ef7"></div>Produtos</div>
-        <div class="opt1-nav-item"><div class="opt1-nav-dot"></div>Relatórios</div>
+        
+        <div class="opt1-nav-item" @click="$router.push('/')">
+          <div class="opt1-nav-dot"></div>Dashboard
+        </div>
+        
+        <div class="opt1-nav-item" @click="$router.push('/')">
+          <div class="opt1-nav-dot"></div>Usuários
+        </div>
+        
+        <div class="opt1-nav-item active">
+          <div class="opt1-nav-dot" style="background:#4f6ef7"></div>Produtos
+        </div>
+        
+        <div class="opt1-nav-item" @click="$router.push('/relatorios')">
+          <div class="opt1-nav-dot"></div>Relatórios
+        </div>
+        
         <div style="flex:1"></div>
         
         <div class="opt1-nav-item logout-btn" @click="handleLogout">

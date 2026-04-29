@@ -1,0 +1,174 @@
+<template>
+  <div class="opt1">
+    <div style="display:flex; height: 100vh;">
+      
+      <div class="opt1-sidebar">
+        <div class="opt1-logo">
+          <div class="opt1-logo-text">AdminPanel</div>
+          <div class="opt1-logo-sub">v1.0 — full-stack</div>
+        </div>
+        <div class="opt1-nav-item" @click="$router.push('/')"><div class="opt1-nav-dot"></div>Dashboard</div>
+        <div class="opt1-nav-item" @click="$router.push('/')"><div class="opt1-nav-dot"></div>Usuários</div>
+        <div class="opt1-nav-item" @click="$router.push('/produtos')"><div class="opt1-nav-dot"></div>Produtos</div>
+        <div class="opt1-nav-item active"><div class="opt1-nav-dot" style="background:#4f6ef7"></div>Relatórios</div>
+        <div style="flex:1"></div>
+        
+        <div class="opt1-nav-item logout-btn" @click="handleLogout">
+          <div class="opt1-nav-dot" style="background:#ef4444"></div>Sair
+        </div>
+      </div>
+
+      <div class="opt1-main">
+        <div class="opt1-header">
+          <div>
+            <div class="opt1-title">Relatório Consolidado (SQL Avançado)</div>
+            <div style="font-size:12px;color:#555;margin-top:2px;">Desempenho de usuários e média de valores processados no banco de dados.</div>
+          </div>
+          <button class="opt1-btn" @click="fetchRelatorio" style="background: #22253a; border: 1px solid #4f6ef7; color: #4f6ef7;">Atualizar Dados</button>
+        </div>
+
+        <div class="opt1-table-wrap mt-6">
+          <table class="opt1-table">
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th style="text-align: center;">Total de Produtos</th>
+                <th>Preço Médio</th>
+                <th>Produtos Vinculados</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="isLoading">
+                <td colspan="4" style="text-align:center; padding: 20px; color: #888;">
+                  Processando consulta SQL...
+                </td>
+              </tr>
+              <tr v-else-if="relatorio.length === 0">
+                <td colspan="4" style="text-align:center; padding: 20px; color: #888;">
+                  Nenhum dado encontrado para o relatório.
+                </td>
+              </tr>
+              <tr v-else v-for="item in relatorio" :key="item.usuario_id">
+                <td style="color:#fff; font-weight: 500;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="opt1-avatar" style="background:#8b5cf6">{{ getInitials(item.usuario_nome) }}</div>
+                    {{ item.usuario_nome }}
+                  </div>
+                </td>
+                <td style="text-align: center;">
+                  <span style="font-size: 16px; color:#fff; font-weight:600;">{{ item.total_produtos }}</span>
+                </td>
+                <td style="color:#4ade80; font-family:'DM Mono',monospace;">
+                  R$ {{ formatCurrency(item.media_preco) }}
+                </td>
+                <td>
+                  <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                    <span v-if="item.lista_produtos.length === 0" style="color: #666; font-size: 11px;">Nenhum produto</span>
+                    <span 
+                      v-else
+                      v-for="prod in item.lista_produtos" 
+                      :key="prod.id"
+                      style="background: #1e2029; border: 1px solid #2a2d38; padding: 2px 8px; border-radius: 4px; font-size: 10px; color: #aaa;"
+                    >
+                      {{ prod.nome }}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
+import http from '../services/http';
+
+const router = useRouter();
+const authStore = useAuthStore();
+
+interface ProdutoItem {
+  id: number;
+  nome: string;
+  preco: number;
+}
+
+interface RelatorioItem {
+  usuario_id: number;
+  usuario_nome: string;
+  total_produtos: number;
+  media_preco: number;
+  lista_produtos: ProdutoItem[];
+}
+
+const relatorio = ref<RelatorioItem[]>([]);
+const isLoading = ref(true);
+
+const fetchRelatorio = async () => {
+  isLoading.value = true;
+  try {
+    const response = await http.get('/relatorio-sql');
+    relatorio.value = response.data;
+  } catch (error) {
+    console.error('Erro ao buscar relatório:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const getInitials = (nome: string) => {
+  if (!nome) return '--';
+  const nomes = nome.trim().split(' ');
+  if (nomes.length >= 2) return `${nomes[0]?.[0] ?? ''}${nomes[1]?.[0] ?? ''}`.toUpperCase();
+  return nome.substring(0, 2).toUpperCase();
+};
+
+const formatCurrency = (valor: number | string) => {
+  const num = typeof valor === 'string' ? parseFloat(valor) : valor;
+  return num.toFixed(2).replace('.', ',');
+};
+
+const handleLogout = async () => {
+  await authStore.logout();
+  router.push('/login');
+};
+
+onMounted(() => {
+  fetchRelatorio();
+});
+</script>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+/* Mantendo o seu CSS original */
+.opt1 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'DM Sans', sans-serif; }
+.opt1 { background: #0f1117; color: #e8e8e8; overflow: hidden; height: 100vh; width: 100vw; }
+.opt1-sidebar { width: 220px; background: #16181f; border-right: 1px solid #2a2d38; padding: 20px 0; display: flex; flex-direction: column; }
+.opt1-logo { padding: 0 20px 20px; border-bottom: 1px solid #2a2d38; margin-bottom: 12px; }
+.opt1-logo-text { font-size: 16px; font-weight: 600; color: #fff; letter-spacing: -0.3px; }
+.opt1-logo-sub { font-size: 11px; color: #555; font-family: 'DM Mono', monospace; margin-top: 2px; }
+.opt1-nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 13px; color: #888; cursor: pointer; transition: all 0.15s; }
+.opt1-nav-item:hover { color: #e8e8e8; background: #1e2029; }
+.opt1-nav-item.active { color: #fff; background: #22253a; border-right: 2px solid #4f6ef7; }
+.opt1-nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.opt1-main { flex: 1; padding: 24px; overflow: hidden; }
+.opt1-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.opt1-title { font-size: 20px; font-weight: 600; color: #fff; }
+.opt1-btn { background: #4f6ef7; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.opt1-btn:hover { opacity: 0.8; }
+.opt1-table-wrap { background: #16181f; border: 1px solid #2a2d38; border-radius: 10px; overflow: hidden; }
+.opt1-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.opt1-table th { padding: 12px 16px; text-align: left; font-size: 11px; color: #555; font-family: 'DM Mono', monospace; border-bottom: 1px solid #2a2d38; font-weight: 500; text-transform: uppercase; }
+.opt1-table td { padding: 12px 16px; color: #ccc; border-bottom: 1px solid #1e2029; }
+.opt1-table tr:last-child td { border-bottom: none; }
+.opt1-avatar { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; }
+
+.logout-btn { border-top: 1px solid #2a2d38; margin-top: 8px; }
+.logout-btn:hover { color: #ef4444; }
+</style>
