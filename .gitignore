@@ -1,6 +1,11 @@
 # =========================
-# FRONTEND (Vue.js)
+# RAIZ DO PROJETO
 # =========================
+.env
+.env.local
+
+# =========================
+# FRONTEND (Vue.js)
 frontend/node_modules/
 frontend/dist/
 frontend/.env.local
