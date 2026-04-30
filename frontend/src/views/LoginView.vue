@@ -64,9 +64,8 @@ import { useAuthStore } from '../stores/auth';
 const router = useRouter();
 const authStore = useAuthStore();
 
-// Credenciais padrão que criamos no Seeder para facilitar o teste
-const email = ref('admin@admin.com');
-const senha = ref('01010101');
+const email = ref('');
+const senha = ref('');
 
 const isLoading = ref(false);
 const errorMessage = ref('');
@@ -77,10 +76,8 @@ const handleLogin = async () => {
     
     try {
         await authStore.login(email.value, senha.value);
-        // Deu certo? Joga pro Dashboard!
         router.push('/');
     } catch (error: any) {
-        // Se a API retornar erro de credenciais incorretas
         errorMessage.value = error.response?.data?.message || 'Erro ao comunicar com o servidor.';
     } finally {
         isLoading.value = false;

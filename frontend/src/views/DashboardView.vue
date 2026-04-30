@@ -30,24 +30,28 @@
         <div class="opt1-stats">
           <div class="opt1-stat">
             <div class="opt1-stat-label">Total usuários</div>
-            <div class="opt1-stat-val">248</div>
-            <div class="opt1-stat-change">+12 este mês</div>
+            <div class="opt1-stat-val">{{ totalUsuarios }}</div>
+            <div class="opt1-stat-change">Cadastrados no banco</div>
           </div>
           <div class="opt1-stat">
             <div class="opt1-stat-label">Ativos</div>
-            <div class="opt1-stat-val">201</div>
-            <div class="opt1-stat-change" style="color:#4f6ef7">81% do total</div>
+            <div class="opt1-stat-val">{{ totalUsuarios }}</div>
+            <div class="opt1-stat-change" style="color:#4f6ef7">100% do total</div>
           </div>
           <div class="opt1-stat">
             <div class="opt1-stat-label">Produtos</div>
-            <div class="opt1-stat-val">1.4k</div>
-            <div class="opt1-stat-change">~5.7 por usuário</div>
+            <div class="opt1-stat-val">{{ totalProdutos }}</div>
+            <div class="opt1-stat-change">No catálogo</div>
           </div>
         </div>
 
         <div class="opt1-table-wrap">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #2a2d38;">
-            <input style="background:#0f1117;border:1px solid #2a2d38;border-radius:6px;padding:6px 12px;color:#ccc;font-size:12px;width:200px;" placeholder="Buscar usuário..." />
+            <input 
+              v-model="searchQuery" 
+              style="background:#0f1117;border:1px solid #2a2d38;border-radius:6px;padding:6px 12px;color:#ccc;font-size:12px;width:200px;" 
+              placeholder="Buscar por nome, email ou cpf..." 
+            />
             <div style="display:flex;gap:8px;">
               <select style="background:#0f1117;border:1px solid #2a2d38;border-radius:6px;padding:6px 10px;color:#888;font-size:12px;">
                 <option>Todos</option><option>Ativos</option><option>Inativos</option>
@@ -68,7 +72,7 @@
                 </td>
               </tr>
               
-              <tr v-else v-for="user in usuarios" :key="user?.id">
+              <tr v-else v-for="user in usuariosFiltrados" :key="user?.id">
                 <td>
                   <div style="display:flex;align-items:center;gap:8px;">
                     <div class="opt1-avatar" style="background:#4f6ef7">
@@ -83,7 +87,6 @@
                 <td><span class="opt1-badge active">ativo</span></td>
                 <td>
                   <div style="display:flex;gap:8px;">
-                    <button class="action-btn">Ver</button>
                     <button class="action-btn" @click="openEditUserModal(user)">Editar</button>
                     <button class="action-btn" style="color: #ef4444; border-color: #5c1a1a;" @click="excluirUsuario(user.id)">Excluir</button>
                   </div>
@@ -133,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import http from '../services/http';
@@ -149,7 +152,9 @@ interface User {
 
 const usuarios = ref<User[]>([]);
 const totalUsuarios = ref(0);
+const totalProdutos = ref(0);
 const isLoading = ref(true);
+const searchQuery = ref('');
 
 const fetchUsuarios = async () => {
   try {
@@ -245,8 +250,41 @@ const excluirUsuario = async (id: number) => {
   }
 };
 
+const fetchDashboardData = async () => {
+  isLoading.value = true;
+  try {
+    // Busca usuários e produtos ao mesmo tempo!
+    const [userRes, prodRes] = await Promise.all([
+      http.get('/users'),
+      http.get('/products')
+    ]);
+    
+    usuarios.value = userRes.data.data; 
+    totalUsuarios.value = userRes.data.total; // Pega o total real de usuários
+    totalProdutos.value = prodRes.data.total; // Pega o total real de produtos
+  } catch (error) {
+    console.error('Erro ao buscar dados do dashboard:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const usuariosFiltrados = computed(() => {
+  if (!searchQuery.value) {
+    return usuarios.value; // Se o campo estiver vazio, mostra todos
+  }
+  
+  const termo = searchQuery.value.toLowerCase();
+  
+  return usuarios.value.filter(user => 
+    user.nome.toLowerCase().includes(termo) || 
+    user.email.toLowerCase().includes(termo) || 
+    user.cpf.includes(termo)
+  );
+});
+
 onMounted(() => {
-  fetchUsuarios();
+  fetchDashboardData();
 });
 </script>
 
@@ -302,4 +340,63 @@ onMounted(() => {
   background: #1e2029;
   color: #fff;
 }
+.opt1-table-wrap {
+  overflow-x: auto; /* Permite rolar a tabela no celular sem quebrar a tela */
+}
+
+@media (max-width: 768px) {
+  /* Transforma o layout principal em coluna */
+  .opt1 > div {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 100vh;
+  }
+
+  /* Ajusta o menu lateral para virar um menu superior horizontal */
+  .opt1-sidebar {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 10px;
+    border-right: none;
+    border-bottom: 1px solid #2a2d38;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .opt1-logo {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding: 0 10px;
+  }
+
+  .opt1-nav-item {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  /* Os botões de Sair e Espaçadores não precisam de margens estranhas no mobile */
+  .logout-btn {
+    border-top: none;
+    margin-top: 0;
+  }
+
+  /* Coloca os cards de estatísticas um embaixo do outro */
+  .opt1-stats {
+    grid-template-columns: 1fr;
+  }
+
+  /* Ajusta o cabeçalho para não ficar espremido */
+  .opt1-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .opt1-main {
+    padding: 16px;
+  }
+}
+
 </style>
